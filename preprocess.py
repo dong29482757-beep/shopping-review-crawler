@@ -30,6 +30,8 @@ def clean_text(text):
     if pd.isna(text):
         return ''
     text = str(text)
+    # zero-width space 등 불필요한 유니코드 제거
+    text = re.sub(r'[​‌‍﻿]', '', text)
     # 과도한 줄바꿈/공백 정규화
     text = re.sub(r'\n{3,}', '\n\n', text)
     text = re.sub(r'[ \t]+', ' ', text)
@@ -37,8 +39,20 @@ def clean_text(text):
     text = text.strip()
     return text
 
+def clean_product_name(text):
+    if pd.isna(text) or text == '':
+        return ''
+    text = str(text)
+    # 가격/할인율/배송 정보 제거 (숫자+원, %, 배송 문구 등)
+    text = re.sub(r'\d[\d,]*원.*', '', text)
+    text = re.sub(r'\d+%.*', '', text)
+    text = re.sub(r'(로켓|내일|오늘|무료|배송).*', '', text)
+    text = text.strip().rstrip(',').strip()
+    return text
+
 combined['review_content'] = combined['review_content'].apply(clean_text)
 combined['review_title'] = combined['review_title'].apply(clean_text)
+combined['product_name'] = combined['product_name'].apply(clean_product_name)
 
 print('  텍스트 정제 완료')
 
