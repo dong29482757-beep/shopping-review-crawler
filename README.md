@@ -297,10 +297,23 @@ Streamlit 서비스로 구현했습니다. 개발 과정에서 겪은 문제와 
 
 ### 모델 성능
 
+밸런싱한 학습/검증셋 기준 성능:
+
 | | accuracy | macro F1 | 비고 |
 |---|---|---|---|
 | ML (TF-IDF + LogisticRegression) | 0.738 | 0.677 | `ml/train_ml.py` |
 | DL (numpy로 직접 구현한 3층 신경망) | 0.762 | 0.663 | `dl/train_dl.py`, PyTorch가 Python 3.14에서 설치 불가해 numpy로 직접 구현 |
+
+**문제 발견**: 위 수치는 클래스 밸런싱한 데이터 기준이라 실제 운영 비율(positive 86.7%)로
+평가하니 neutral precision이 0.20까지 떨어지는 문제가 있었음 (label shift).
+`model_utils.py`에서 클래스 사전확률 보정(prior correction)을 추가해 재학습 없이 개선:
+
+| | accuracy (실제 분포) | macro F1 (실제 분포) | neutral precision |
+|---|---|---|---|
+| ML 보정 전 → 후 | 0.806 → **0.908** | 0.626 → **0.685** | 0.20 → **0.37** |
+| DL 보정 전 → 후 | 0.890 → **0.922** | 0.712 → **0.718** | 0.37 → **0.51** |
+
+자세한 진단/원인/해결 과정은 [DEVLOG.md](DEVLOG.md) "모델 문제점과 개선" 참고.
 
 ### 실행 방법
 
