@@ -145,7 +145,38 @@ for i, (stage, label, count) in enumerate(stages):
         arr.fill.solid(); arr.fill.fore_color.rgb = GREY
         arr.line.fill.background(); arr.shadow.inherit = False
 
-# ---------- Slide 3: 데이터 준비 — 가장 까다로웠던 단계 ----------
+# ---------- Slide 3: 쿠팡 크롤링 — 봇 탐지를 어떻게 뚫었나 ----------
+s = add_slide(NAVY)
+add_text(s, "쿠팡 크롤링 — 봇 탐지를 어떻게 뚫었나", 0.7, 0.5, 11.5, 0.8, size=27, color=WHITE, bold=True, font="Georgia")
+add_text(s, "쿠팡은 문지기(Akamai)가 \"이 손님이 사람인지 로봇인지\" 5단계로 검사한다", 0.7, 1.35, 11.5, 0.5,
+         size=14.5, color=ICE, italic=True)
+
+box1 = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.7), Inches(2.0), Inches(5.8), Inches(4.6))
+box1.adjustments[0] = 0.05
+box1.fill.solid(); box1.fill.fore_color.rgb = RGBColor(0x28, 0x33, 0x70)
+box1.line.fill.background(); box1.shadow.inherit = False
+add_text(s, "왜 막혔나", 1.0, 2.3, 5.1, 0.5, size=17, bold=True, color=CORAL)
+add_bullets(s, [
+    "requests로 접속 → 헤더만 보고 1단계에서 바로 차단",
+    "Selenium으로 접속 → \"자동화 도구\" 흔적이 들켜서\n3단계에서 차단",
+    "마우스·스크롤 없이 너무 빠르게 요청하면\n행동 패턴에서 차단",
+], 1.0, 2.9, 5.2, 3.5, size=14, color=WHITE, space_after=14)
+
+box2 = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(6.8), Inches(2.0), Inches(5.8), Inches(4.6))
+box2.adjustments[0] = 0.05
+box2.fill.solid(); box2.fill.fore_color.rgb = CORAL
+box2.line.fill.background(); box2.shadow.inherit = False
+add_text(s, "어떻게 뚫었나 — \"진짜 손님\" 행세", 7.1, 2.3, 5.2, 0.5, size=17, bold=True, color=WHITE)
+add_bullets(s, [
+    "가짜 브라우저 대신, 내 컴퓨터의 실제 Chrome을\n그대로 원격 연결해서 사용 (Playwright + CDP)",
+    "검색창에 키워드를 한 글자씩 타이핑\n(URL로 바로 안 들어감)",
+    "상품 사이 랜덤 대기, 가끔 쿠팡 홈으로 돌아가\n쉬기 — 사람처럼 행동",
+], 7.1, 2.9, 5.2, 3.5, color=WHITE, size=14, space_after=14)
+
+add_text(s, "핵심: 자동화 도구를 \"새로 띄우는\" 게 아니라, 이미 로그인된 실제 브라우저에 \"숟가락만 얹는\" 방식이라 자동화 흔적 자체가 없다",
+         0.7, 6.75, 11.9, 0.5, size=12.5, color=ICE, italic=True, align=PP_ALIGN.CENTER)
+
+# ---------- Slide 4: 데이터 준비 — 가장 까다로웠던 단계 ----------
 s = add_slide(WHITE)
 add_text(s, "데이터 준비 — 가장 까다로웠던 단계", 0.7, 0.5, 11.5, 0.8, size=28, color=NAVY, bold=True, font="Georgia")
 
@@ -168,7 +199,7 @@ for title, problem, solution in issues:
     add_text(s, "해결 → " + solution, 8.15, y + 0.15, 4.3, 1.25, size=13, color=NAVY, bold=True, line_spacing=1.25)
     y += 1.75
 
-# ---------- Slide 4: AI 활용 + 모델 비교 ----------
+# ---------- Slide 5: AI 활용 + 모델 비교 ----------
 s = add_slide(WHITE)
 add_text(s, "AI 활용 & 모델 — ML/DL/LSTM/Transformer 비교", 0.7, 0.5, 11.5, 0.8, size=24, color=NAVY, bold=True, font="Georgia")
 add_bullets(s, [
@@ -197,7 +228,7 @@ add_bullets(s, [
     "LSTM은 순서 정보 기대했으나 차이 없음\n→ 짧은 리뷰는 어휘 자체가 강한 신호",
 ], 8.6, 3.9, 4.2, 2.8, size=12.5)
 
-# ---------- Slide 5: 모델 문제 발견 & 보정 ----------
+# ---------- Slide 6: 모델 문제 발견 & 보정 ----------
 s = add_slide(NAVY)
 add_text(s, "모델 문제 발견 — 실제 분포로 재평가", 0.7, 0.5, 11.5, 0.8, size=27, color=WHITE, bold=True, font="Georgia")
 
@@ -228,7 +259,7 @@ chart3.plots[0].series[0].format.fill.fore_color.rgb = RGBColor(0x8A, 0x90, 0xA8
 chart3.plots[0].series[1].format.fill.solid()
 chart3.plots[0].series[1].format.fill.fore_color.rgb = CORAL
 
-# ---------- Slide 6: 서비스 진화 & 마무리 ----------
+# ---------- Slide 7: 서비스 진화 & 마무리 ----------
 s = add_slide(WHITE)
 add_text(s, "서비스 진화 — 텍스트 데모에서 실용적 리포트로", 0.7, 0.5, 11.5, 0.8, size=24, color=NAVY, bold=True, font="Georgia")
 
