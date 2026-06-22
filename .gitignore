@@ -1,5 +1,6 @@
 # 가상환경
 coupang_env/
+torch_env/
 
 # 수집 데이터 (용량 큼)
 *.csv

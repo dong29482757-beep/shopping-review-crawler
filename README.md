@@ -315,6 +315,19 @@ Streamlit 서비스로 구현했습니다. 개발 과정에서 겪은 문제와 
 
 자세한 진단/원인/해결 과정은 [DEVLOG.md](DEVLOG.md) "모델 문제점과 개선" 참고.
 
+### 추가 실험 — LSTM / Transformer (PyTorch)
+
+메인 환경(Python 3.14)은 PyTorch 휠이 없어서, 별도로 Python 3.11 venv(`torch_env/`)를
+만들어 LSTM과 KoELECTRA 파인튜닝까지 시도했다 (`dl/train_lstm.py`, `dl/train_transformer.py`).
+
+| 모델 | accuracy | macro F1 | 학습 데이터 |
+|---|---|---|---|
+| LSTM (PyTorch, 사전학습 임베딩 X) | 0.734 | 0.671 | 136,150건 |
+| KoELECTRA-small 파인튜닝 | 0.772 | 0.660 | 20,000건 (CPU 한계로 서브샘플, 2 epoch) |
+
+결론과 한계는 [DEVLOG.md](DEVLOG.md) "추가 실험 — LSTM / Transformer" 참고.
+(Streamlit 데모는 메인 환경 호환 때문에 현재 ML+FFNN만 탑재되어 있음)
+
 ### 실행 방법
 
 ```bash
@@ -345,7 +358,9 @@ crolling/
 │   └── train_ml.py         # TF-IDF + LogisticRegression
 ├── dl/
 │   ├── neural_net.py       # numpy 기반 피드포워드 신경망 구현
-│   └── train_dl.py         # DL 모델 학습
+│   ├── train_dl.py         # DL(FFNN) 모델 학습
+│   ├── train_lstm.py       # PyTorch LSTM 학습 (torch_env에서 실행)
+│   └── train_transformer.py # KoELECTRA 파인튜닝 (torch_env에서 실행)
 ├── precompute_dashboard.py # 대시보드용 사전 집계
 ├── model_utils.py          # 서비스용 추론 유틸
 ├── app.py                  # Streamlit 서비스
