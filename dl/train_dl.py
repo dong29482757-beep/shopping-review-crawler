@@ -8,8 +8,8 @@ from sklearn.metrics import classification_report, accuracy_score, f1_score
 sys.path.append(r"D:\crolling")
 from dl.neural_net import FeedForwardNN
 
-TRAIN = r"D:\crolling\ml\train.csv"
-TEST = r"D:\crolling\ml\test.csv"
+TRAIN = r"D:\crolling\ml\train_tok.csv"
+TEST = r"D:\crolling\ml\test_tok.csv"
 VEC_PATH = r"D:\crolling\models\tfidf_vectorizer.joblib"
 OUT_DIR = r"D:\crolling\models"
 
@@ -18,12 +18,12 @@ LABEL2IDX = {l: i for i, l in enumerate(LABELS)}
 
 
 def main():
-    train = pd.read_csv(TRAIN).dropna(subset=["review_content"])
-    test = pd.read_csv(TEST).dropna(subset=["review_content"])
+    train = pd.read_csv(TRAIN).dropna(subset=["tokens"])
+    test = pd.read_csv(TEST).dropna(subset=["tokens"])
 
     vec = joblib.load(VEC_PATH)
-    Xtr = vec.transform(train["review_content"]).astype(np.float32)
-    Xte = vec.transform(test["review_content"]).astype(np.float32)
+    Xtr = vec.transform(train["tokens"]).astype(np.float32)
+    Xte = vec.transform(test["tokens"]).astype(np.float32)
     ytr = train["sentiment"].map(LABEL2IDX).values
     yte = test["sentiment"].map(LABEL2IDX).values
 

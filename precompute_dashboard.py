@@ -2,25 +2,13 @@
 대시보드에서 538,774건 원본 CSV를 매번 읽으면 Streamlit이 느려져서
 미리 집계해둔 작은 파일들을 만들어둔다 (플랫폼별/월별/키워드별 통계).
 """
-import re
 import collections
 import pandas as pd
 
+from preprocessing_ko import tokenize
+
 SRC = r"D:\crolling\merged_reviews_all.csv"
 OUT_DIR = r"D:\crolling\models"
-
-STOPWORDS = set("""
-이 그 저 것 들 을 를 에 의 가 은 는 도 으로 로 와 과 한 하다 합니다 했어요 너무
-같아요 진짜 정말 그냥 같습니다 이거 저거 더 좀 잘 안 못 있는 있어요 없어요 제품
-사용 구매 사용중 사용했는데 있습니다 합니다 했습니다 입니다 인데 이라 거 게 요
-""".split())
-
-
-def tokenize(text):
-    if not isinstance(text, str):
-        return []
-    tokens = re.findall(r"[가-힣]{2,}", text)
-    return [t for t in tokens if t not in STOPWORDS]
 
 
 def main():
@@ -56,7 +44,7 @@ def main():
     top_neg_words.to_csv(f"{OUT_DIR}/agg_top_negative_words.csv", index=False, encoding="utf-8-sig")
 
     print("긍정 리뷰 키워드 집계...")
-    pos = df[df["sentiment"] == "positive"].sample(n=min(100000, (df["sentiment"] == "positive").sum()), random_state=42)
+    pos = df[df["sentiment"] == "positive"].sample(n=min(20000, (df["sentiment"] == "positive").sum()), random_state=42)
     counter2 = collections.Counter()
     for text in pos["review_content"].dropna():
         counter2.update(tokenize(text))

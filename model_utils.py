@@ -1,7 +1,7 @@
-import re
 import joblib
 import numpy as np
 from dl.neural_net import FeedForwardNN
+from preprocessing_ko import clean_for_vectorizer
 
 LABELS = ["negative", "neutral", "positive"]
 LABEL_KO = {"negative": "부정", "neutral": "중립", "positive": "긍정"}
@@ -12,18 +12,9 @@ LABEL_KO = {"negative": "부정", "neutral": "중립", "positive": "긍정"}
 # 실제 분포에서는 neutral precision이 0.20까지 떨어지는 문제가 있었다.
 # (자세한 진단/재현: DEVLOG.md "모델 문제점과 개선" 참고)
 # -> label shift correction: p_real(y|x) ∝ p_train(y|x) * (p_real(y) / p_train(y))
-TRAIN_PRIOR = np.array([0.277187, 0.170856, 0.551957])  # negative, neutral, positive
+TRAIN_PRIOR = np.array([0.277048, 0.170827, 0.552126])  # negative, neutral, positive
 REAL_PRIOR = np.array([0.082203, 0.050704, 0.867093])
 PRIOR_CORRECTION = REAL_PRIOR / TRAIN_PRIOR
-
-
-def clean_text(t):
-    if not isinstance(t, str):
-        return ""
-    t = re.sub(r"http\S+", " ", t)
-    t = re.sub(r"[^\w\s가-힣]", " ", t)
-    t = re.sub(r"\s+", " ", t).strip()
-    return t
 
 
 def correct_proba(proba):
@@ -39,8 +30,8 @@ class SentimentModels:
         assert list(self.ml_model.classes_) == LABELS, "ml_model.classes_ 순서가 LABELS와 달라 보정이 깨짐"
 
     def predict(self, text):
-        cleaned = clean_text(text)
-        X = self.vec.transform([cleaned])
+        tokens = clean_for_vectorizer(text)
+        X = self.vec.transform([tokens])
 
         ml_proba_raw = self.ml_model.predict_proba(X)[0]
         ml_proba_arr = correct_proba(ml_proba_raw)
@@ -51,7 +42,7 @@ class SentimentModels:
         dl_pred = LABELS[dl_proba_arr.argmax()]
 
         return {
-            "cleaned_text": cleaned,
+            "cleaned_text": tokens,
             "ml": {"label": ml_pred, "label_ko": LABEL_KO[ml_pred], "proba": dict(zip(LABELS, ml_proba_arr))},
             "dl": {"label": dl_pred, "label_ko": LABEL_KO[dl_pred], "proba": dict(zip(LABELS, dl_proba_arr))},
         }

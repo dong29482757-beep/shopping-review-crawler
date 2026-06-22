@@ -295,23 +295,34 @@ Streamlit 서비스로 구현했습니다. 개발 과정에서 겪은 문제와 
 | 올리브영 | 221,525 |
 | **통합 전체** | **538,774** |
 
+> `konlpy`(Okt 형태소분석)는 내부적으로 JVM을 쓰므로 Java(JRE 8+)가 설치되어 있어야 합니다.
+
+### 전처리 — 형태소 분석 + 불용어 제거
+
+`preprocessing_ko.py`에서 Okt(konlpy) 형태소 분석으로 명사/동사/형용사/부사만
+남기고 어간으로 정규화한 뒤, 직접 만든 불용어 리스트로 주제와 무관한 범용
+단어("제품", "사용", "구매" 등)를 제거한다. 화장품 도메인 복합명사가 잘못
+쪼개지는 문제(예: "재구매"→"재"+"구매")는 분석 전 플레이스홀더 치환으로 우회.
+정확도 자체는 거의 변하지 않았지만(아래 표), 키워드 집계 품질은 크게 개선됨
+(자세한 분석은 [DEVLOG.md](DEVLOG.md) "문제 1" 참고).
+
 ### 모델 성능
 
 밸런싱한 학습/검증셋 기준 성능:
 
 | | accuracy | macro F1 | 비고 |
 |---|---|---|---|
-| ML (TF-IDF + LogisticRegression) | 0.738 | 0.677 | `ml/train_ml.py` |
-| DL (numpy로 직접 구현한 3층 신경망) | 0.762 | 0.663 | `dl/train_dl.py`, PyTorch가 Python 3.14에서 설치 불가해 numpy로 직접 구현 |
+| ML (형태소 토큰 TF-IDF + LogisticRegression) | 0.730 | 0.668 | `ml/train_ml.py` |
+| DL (numpy로 직접 구현한 3층 신경망) | 0.754 | 0.664 | `dl/train_dl.py`, PyTorch가 Python 3.14에서 설치 불가해 numpy로 직접 구현 |
 
 **문제 발견**: 위 수치는 클래스 밸런싱한 데이터 기준이라 실제 운영 비율(positive 86.7%)로
 평가하니 neutral precision이 0.20까지 떨어지는 문제가 있었음 (label shift).
 `model_utils.py`에서 클래스 사전확률 보정(prior correction)을 추가해 재학습 없이 개선:
 
-| | accuracy (실제 분포) | macro F1 (실제 분포) | neutral precision |
-|---|---|---|---|
-| ML 보정 전 → 후 | 0.806 → **0.908** | 0.626 → **0.685** | 0.20 → **0.37** |
-| DL 보정 전 → 후 | 0.890 → **0.922** | 0.712 → **0.718** | 0.37 → **0.51** |
+| | accuracy (실제 분포) | macro F1 (실제 분포) |
+|---|---|---|
+| ML 보정 후 | **0.909** | **0.675** |
+| DL 보정 후 | **0.920** | **0.711** |
 
 자세한 진단/원인/해결 과정은 [DEVLOG.md](DEVLOG.md) "모델 문제점과 개선" 참고.
 
@@ -328,21 +339,35 @@ Streamlit 서비스로 구현했습니다. 개발 과정에서 겪은 문제와 
 결론과 한계는 [DEVLOG.md](DEVLOG.md) "추가 실험 — LSTM / Transformer" 참고.
 (Streamlit 데모는 메인 환경 호환 때문에 현재 ML+FFNN만 탑재되어 있음)
 
+### 서비스 — 텍스트 데모에서 "상품 리포트"로 전환
+
+처음 버전은 "리뷰 텍스트를 입력하면 감성을 알려주는" 데모였는데, 실제
+구매를 고민하는 사람에게는 쓸모가 없다는 피드백을 받았다. 그래서 **상품
+리포트** 기능을 핵심으로 새로 만들었다: 상품을 검색하면 8개 속성(보습/수분,
+향, 트러블/자극, 발림성/흡수력, 지속력, 가격/가성비, 용기/디자인, 효과)별
+긍정 비율과 대표 리뷰를 보여준다. 538,774건 전체에 ML 모델(Okt 형태소분석
+필요)을 돌리기엔 느려서, 정규식 키워드 매칭 기반의 규칙 기반 속성분석
+(`absa.py`)으로 전체 데이터를 52초에 처리했다. 예: 어떤 토너는 전체 평점이
+4.9인데 트러블/자극 속성만 보면 부정 비율이 67% — 평점만 봐서는 알 수 없는
+정보를 드러낸다. 자세한 내용은 [DEVLOG.md](DEVLOG.md) "문제 2" 참고.
+
 ### 실행 방법
 
 ```bash
 # 1. 데이터 통합
 python merge_datasets.py
 
-# 2. 학습 데이터 준비 (클래스 밸런싱)
+# 2. 학습 데이터 준비 (클래스 밸런싱) + 형태소 토큰화
 python ml/prepare_data.py
+python ml/tokenize_data.py
 
 # 3. 모델 학습
 python ml/train_ml.py
 python dl/train_dl.py
 
-# 4. 대시보드용 집계 생성
+# 4. 대시보드/상품 리포트용 집계 생성
 python precompute_dashboard.py
+python precompute_absa.py
 
 # 5. 서비스 실행
 streamlit run app.py
@@ -353,8 +378,12 @@ streamlit run app.py
 ```
 crolling/
 ├── merge_datasets.py       # 3개 플랫폼 데이터 통합 (스키마/라벨 통일)
+├── preprocessing_ko.py      # Okt 형태소분석 + 불용어 제거
+├── absa.py                  # 규칙 기반 속성기반 감성분석(ABSA)
+├── precompute_absa.py       # 상품별 속성 감성 집계 생성
 ├── ml/
 │   ├── prepare_data.py     # 클래스 밸런싱, train/test 분리
+│   ├── tokenize_data.py    # Okt 형태소 토큰화
 │   └── train_ml.py         # TF-IDF + LogisticRegression
 ├── dl/
 │   ├── neural_net.py       # numpy 기반 피드포워드 신경망 구현
@@ -363,7 +392,7 @@ crolling/
 │   └── train_transformer.py # KoELECTRA 파인튜닝 (torch_env에서 실행)
 ├── precompute_dashboard.py # 대시보드용 사전 집계
 ├── model_utils.py          # 서비스용 추론 유틸
-├── app.py                  # Streamlit 서비스
+├── app.py                  # Streamlit 서비스 (상품 리포트 / 텍스트 분석 / 대시보드)
 ├── models/                 # 학습된 모델 + 집계 데이터
 ├── DEVLOG.md                # 개발 기록 (문제/해결 과정 상세)
 └── BeautyScope_발표.pptx    # 5분 발표용 슬라이드
