@@ -11,7 +11,18 @@ import re
 import functools
 from konlpy.tag import Okt
 
-_okt = Okt()
+# Okt()는 내부적으로 JVM을 띄우는데(5~15초) 이걸 모듈 import 시점에 바로 실행하면
+# Streamlit 앱이 켜질 때 메인 스레드가 그 시간만큼 멈춰서 웹소켓 하트비트가
+# 끊기고 "연결이 끊어졌습니다/재연결 중" 배너가 뜬다. 실제로 토큰화가 필요한
+# 시점에만 한 번 초기화하도록 지연시킨다.
+_okt = None
+
+
+def _get_okt():
+    global _okt
+    if _okt is None:
+        _okt = Okt()
+    return _okt
 
 # Okt가 사전에 없는 화장품 도메인 복합명사를 잘못 쪼개는 문제 대응
 # (예: "재구매"->"재"+"구매", "비추천"->"비"+"추천", "발림성"->"발림"+"성은")
@@ -47,7 +58,7 @@ def tokenize(text):
     for term, placeholder in _PLACEHOLDER.items():
         text = text.replace(term, placeholder)
     try:
-        pos_tags = _okt.pos(text, norm=True, stem=True)
+        pos_tags = _get_okt().pos(text, norm=True, stem=True)
     except Exception:
         return tuple()
     tokens = []
