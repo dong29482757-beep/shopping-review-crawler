@@ -40,12 +40,16 @@ with tab0:
     if candidates.empty:
         st.warning("일치하는 상품이 없습니다. 리뷰 20건 이상인 상품만 리포트를 제공합니다.")
     else:
-        options = candidates.head(50).apply(
-            lambda r: f"[{r['platform']}] {r['product_name']} (리뷰 {int(r['review_count'])}건, 평점 {r['avg_rating']:.1f})",
-            axis=1,
-        ).tolist()
-        selected = st.selectbox(f"상품 선택 ({len(candidates)}개 중 상위 50개 표시)", options)
-        row = candidates.iloc[options.index(selected)]
+        top_candidates = candidates.head(50).reset_index(drop=True)
+        selected_idx = st.selectbox(
+            f"상품 선택 ({len(candidates)}개 중 상위 50개 표시)",
+            options=top_candidates.index,
+            format_func=lambda i: (
+                f"[{top_candidates.loc[i, 'platform']}] {top_candidates.loc[i, 'product_name']} "
+                f"(리뷰 {int(top_candidates.loc[i, 'review_count']):,}건, 평점 {top_candidates.loc[i, 'avg_rating']:.1f})"
+            ),
+        )
+        row = top_candidates.loc[selected_idx]
 
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("리뷰 수", f"{int(row['review_count']):,}건")
@@ -71,9 +75,7 @@ with tab0:
             pivot = pivot.sort_values("총 언급", ascending=False)
 
             for aspect_name, r in pivot.iterrows():
-                bar_col, label_col = st.columns([5, 1])
-                with bar_col:
-                    st.progress(int(r["긍정 비율(%)"]), text=f"**{aspect_name}** — 긍정 {int(r['긍정 비율(%)'])}% (언급 {int(r['총 언급'])}건)")
+                st.progress(int(r["긍정 비율(%)"]), text=f"**{aspect_name}** — 긍정 {int(r['긍정 비율(%)'])}% (언급 {int(r['총 언급'])}건)")
 
         st.markdown("### 대표 리뷰")
         product_reviews = rep_reviews[
