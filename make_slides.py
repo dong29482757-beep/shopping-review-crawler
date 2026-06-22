@@ -197,59 +197,70 @@ add_bullets(s, [
     "LSTM은 순서 정보 기대했으나 차이 없음\n→ 짧은 리뷰는 어휘 자체가 강한 신호",
 ], 8.6, 3.9, 4.2, 2.8, size=12.5)
 
-# ---------- Slide 5: 모델 보정 + 서비스 전환(ABSA) ----------
+# ---------- Slide 5: 모델 문제 발견 & 보정 ----------
 s = add_slide(NAVY)
-add_text(s, "모델 보정 & \"실용성 없다\" 피드백 반영", 0.7, 0.5, 11.5, 0.8, size=25, color=WHITE, bold=True, font="Georgia")
+add_text(s, "모델 문제 발견 — 실제 분포로 재평가", 0.7, 0.5, 11.5, 0.8, size=27, color=WHITE, bold=True, font="Georgia")
 
-box3 = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.7), Inches(1.5), Inches(5.8), Inches(5.3))
-box3.adjustments[0] = 0.05
-box3.fill.solid(); box3.fill.fore_color.rgb = RGBColor(0x28, 0x33, 0x70)
+add_bullets(s, [
+    "학습 시 클래스 밸런싱(다운샘플링)을 했는데, 실제 운영 비율(positive 86.7%)과 다름",
+    "실제 분포 샘플로 재평가하니 neutral precision이 0.20까지 하락 (label shift)",
+    "= 모델이 \"중립\"이라고 예측한 것 중 80%가 틀림",
+], 0.7, 1.7, 11.5, 2.0, size=16, color=WHITE)
+
+box3 = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.7), Inches(3.6), Inches(11.9), Inches(0.9))
+box3.adjustments[0] = 0.1
+box3.fill.solid(); box3.fill.fore_color.rgb = CORAL
 box3.line.fill.background(); box3.shadow.inherit = False
-add_text(s, "모델 문제 발견 → 보정", 1.0, 1.8, 5.1, 0.5, size=16, bold=True, color=CORAL)
-add_text(s,
-         "학습셋과 실제 운영 비율이 달라\nneutral precision이 0.20까지 하락\n(label shift)\n\n"
-         "→ 추론 단계에서 확률 보정 추가\n(재학습 없이)\n\n"
-         "ML accuracy: 0.806 → 0.909\nDL accuracy: 0.890 → 0.920",
-         1.0, 2.4, 5.1, 4.0, size=14, color=WHITE, line_spacing=1.4)
+add_text(s, "해결: 재학습 없이 추론 단계에서 확률 보정 (학습 비율 ↔ 실제 비율 차이로 보정)",
+         1.0, 3.85, 11.3, 0.5, size=15, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
 
-box4 = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(6.8), Inches(1.5), Inches(5.8), Inches(5.3))
-box4.adjustments[0] = 0.05
-box4.fill.solid(); box4.fill.fore_color.rgb = CORAL
-box4.line.fill.background(); box4.shadow.inherit = False
-add_text(s, "서비스 전환: 텍스트 데모 → 상품 리포트", 7.1, 1.8, 5.2, 0.7, size=16, bold=True, color=WHITE)
-add_text(s,
-         "기존: 리뷰를 직접 타이핑해야 하는 데모\n→ 실용성 없다는 피드백\n\n"
-         "전환: 상품 검색 → 속성별(8개) 장단점\n\n"
-         "예시 — 어떤 토너 평점 4.9/5인데\n트러블/자극 속성만 보면 부정 67%\n"
-         "→ 평점만 봐서는 알 수 없는 정보",
-         7.1, 2.5, 5.2, 4.0, size=14, color=WHITE, line_spacing=1.4)
+chart_data3 = CategoryChartData()
+chart_data3.categories = ["ML accuracy", "ML macro F1", "DL accuracy", "DL macro F1"]
+chart_data3.add_series("보정 전", (0.806, 0.626, 0.890, 0.712))
+chart_data3.add_series("보정 후", (0.909, 0.675, 0.920, 0.711))
+gframe3 = s.shapes.add_chart(XL_CHART_TYPE.COLUMN_CLUSTERED, Inches(1.8), Inches(4.7), Inches(9.7), Inches(2.4), chart_data3)
+chart3 = gframe3.chart
+chart3.has_legend = True
+chart3.legend.position = XL_LEGEND_POSITION.BOTTOM
+chart3.legend.include_in_layout = False
+chart3.plots[0].series[0].format.fill.solid()
+chart3.plots[0].series[0].format.fill.fore_color.rgb = RGBColor(0x8A, 0x90, 0xA8)
+chart3.plots[0].series[1].format.fill.solid()
+chart3.plots[0].series[1].format.fill.fore_color.rgb = CORAL
 
-# ---------- Slide 6: 서비스 + 배포 + 마무리 ----------
+# ---------- Slide 6: 서비스 진화 & 마무리 ----------
 s = add_slide(WHITE)
-add_text(s, "서비스 구성 & 마무리", 0.7, 0.5, 11.5, 0.8, size=30, color=NAVY, bold=True, font="Georgia")
+add_text(s, "서비스 진화 — 텍스트 데모에서 실용적 리포트로", 0.7, 0.5, 11.5, 0.8, size=24, color=NAVY, bold=True, font="Georgia")
 
-tabs = [
-    ("🛍️ 상품 리포트", "상품 검색 → 속성별 긍정비율\n+ 대표 긍정/부정 리뷰", CORAL),
-    ("🔍 리뷰 텍스트 분석", "텍스트 입력 → ML/DL 동시\n예측 + 확률 시각화", NAVY),
-    ("📊 데이터 대시보드", "플랫폼/별점/트렌드/카테고리\n분포, 형태소 기반 키워드", NAVY),
+steps = [
+    ("1차", "리뷰 텍스트를 직접\n타이핑하는 데모", "→ \"실용성 없다\" 피드백", GREY),
+    ("2차", "상품 검색 → 8개 속성별\n긍정비율 + 대표리뷰", "→ \"더 구체적이면 좋겠다\"", NAVY),
+    ("3차\n(현재)", "+ 속성별 랭킹\n+ 대안 상품 추천\n+ 피부타입별 세그먼트", "구매 의사결정까지 지원", CORAL),
 ]
-tx = 0.7
-tw = 3.85
-for i, (title, desc, color) in enumerate(tabs):
-    card = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(tx + i*(tw+0.2)), Inches(1.6), Inches(tw), Inches(2.0))
-    card.adjustments[0] = 0.08
+sx = 0.7
+sw = 3.85
+for i, (stage, desc, note, color) in enumerate(steps):
+    card = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(sx + i*(sw+0.2)), Inches(1.6), Inches(sw), Inches(2.7))
+    card.adjustments[0] = 0.07
     card.fill.solid(); card.fill.fore_color.rgb = color
     card.line.fill.background(); card.shadow.inherit = False
-    add_text(s, title, tx + i*(tw+0.2) + 0.25, 1.82, tw - 0.5, 0.5, size=14.5, bold=True, color=WHITE)
-    add_text(s, desc, tx + i*(tw+0.2) + 0.25, 2.35, tw - 0.5, 1.1, size=12, color=ICE, line_spacing=1.3)
+    add_text(s, stage, sx + i*(sw+0.2) + 0.25, 1.8, sw - 0.5, 0.4, size=13, bold=True, color=ICE)
+    add_text(s, desc, sx + i*(sw+0.2) + 0.25, 2.25, sw - 0.5, 1.3, size=13, bold=True, color=WHITE, line_spacing=1.3)
+    add_text(s, note, sx + i*(sw+0.2) + 0.25, 3.65, sw - 0.5, 0.55, size=11.5, color=ICE, italic=True, line_spacing=1.2)
+    if i < len(steps) - 1:
+        arrow_x = sx + i*(sw+0.2) + sw + 0.02
+        arr = s.shapes.add_shape(MSO_SHAPE.RIGHT_ARROW, Inches(arrow_x), Inches(2.8), Inches(0.16), Inches(0.35))
+        arr.fill.solid(); arr.fill.fore_color.rgb = GREY
+        arr.line.fill.background(); arr.shadow.inherit = False
 
-add_text(s, "정리", 0.7, 3.9, 11.5, 0.4, size=16, bold=True, color=NAVY)
+add_text(s, "예: 트러블 잘 올라오는 상품 → 같은 카테고리에서 트러블 평가 좋은 대안을 바로 추천 / 건성·지성·복합성·민감성 피부별로 평가가 따로 보임",
+         0.7, 4.55, 11.9, 0.6, size=12.5, color=GREY, italic=True)
+
+add_text(s, "정리", 0.7, 5.3, 11.5, 0.4, size=16, bold=True, color=NAVY)
 add_bullets(s, [
-    "538,774건 데이터를 통일된 기준으로 통합 (가장 큰 난관: 라벨 기준 불일치)",
-    "환경 제약을 numpy 구현 → 별도 venv 구성으로 단계적으로 해결, 4개 모델 비교",
-    "실제 분포 재평가로 숨은 문제(label shift)를 찾아 보정, ABSA로 서비스를 실용적으로 전환",
-    "requirements.txt·사전 집계 데이터 포함으로 재학습 없이 바로 배포 가능하게 구성",
-], 0.7, 4.4, 11.5, 2.6, size=14.5)
+    "538,774건 데이터를 통일된 기준으로 통합, 4개 모델(ML/DL/LSTM/Transformer)을 비교 학습",
+    "실제 분포 재평가로 숨은 문제(label shift)를 찾아 보정, 두 차례 피드백으로 서비스를 실용적으로 발전",
+], 0.7, 5.8, 11.5, 1.3, size=14)
 
 prs.save(r"D:\crolling\BeautyScope_발표.pptx")
 print("저장 완료")
