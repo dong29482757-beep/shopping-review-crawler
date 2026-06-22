@@ -1,41 +1,39 @@
 import pandas as pd
 import streamlit as st
-from model_utils import SentimentModels
 
-st.set_page_config(page_title="BeautyScope - 화장품 리뷰 분석", page_icon="💄", layout="wide")
+import report_data as rd
 
-MODEL_DIR = r"D:\crolling\models"
+st.set_page_config(page_title="BeautyScope - 화장품 상품 리포트", page_icon="💄", layout="wide")
+
 ASPECTS = ["보습/수분", "향", "트러블/자극", "발림성/흡수력", "지속력", "가격/가성비", "용기/디자인", "효과"]
 
 
-@st.cache_resource
-def load_models():
-    return SentimentModels(MODEL_DIR)
+@st.cache_data
+def load_data():
+    return rd.load_all()
 
 
 @st.cache_data
-def load_agg(name):
-    return pd.read_csv(f"{MODEL_DIR}/{name}", encoding="utf-8-sig")
+def get_aspect_table(aspect_sentiment, product_summary):
+    return rd.build_aspect_table(aspect_sentiment, product_summary)
 
 
-st.title("💄 BeautyScope — 화장품 리뷰 분석")
-st.caption("쿠팡 · 무신사 · 올리브영 538,774건의 화장품 리뷰 기반 — 살까 말까 고민될 때 속성별로 장단점을 확인하세요")
+aspect_sentiment, product_summary, rep_reviews, skin_aspect, skin_summary = load_data()
+aspect_table = get_aspect_table(aspect_sentiment, product_summary)
 
-tab0, tab1, tab2, tab3 = st.tabs(["🛍️ 상품 리포트", "🔍 리뷰 텍스트 분석", "📊 데이터 대시보드", "ℹ️ 프로젝트 소개"])
+st.title("💄 BeautyScope — 화장품 상품 리포트")
+st.caption("쿠팡 · 무신사 · 올리브영 538,774건의 리뷰 기반 — 속성별 장단점, 랭킹, 대안 상품까지 한 번에")
 
-# ---------------- 상품 리포트 (핵심 기능) ----------------
-with tab0:
-    st.subheader("상품을 검색하면 속성별 장단점과 대표 리뷰를 보여드립니다")
-    product_summary = load_agg("product_summary.csv")
-    aspect_sentiment = load_agg("aspect_sentiment.csv")
-    rep_reviews = load_agg("representative_reviews.csv")
+tab_report, tab_rank, tab_about = st.tabs(["🛍️ 상품 리포트", "🏆 속성별 랭킹", "ℹ️ 프로젝트 소개"])
 
-    product_summary = product_summary.sort_values("review_count", ascending=False)
+# ==================== 상품 리포트 ====================
+with tab_report:
+    st.subheader("상품을 검색하면 속성별 장단점 · 대안 상품 · 피부타입별 평가를 보여드립니다")
     query = st.text_input("상품명 검색", placeholder="예: 토너, 선크림, 닥터지, 라로슈포제 ...")
 
-    candidates = product_summary
+    candidates = product_summary.sort_values("review_count", ascending=False)
     if query.strip():
-        candidates = product_summary[product_summary["product_name"].str.contains(query, case=False, na=False)]
+        candidates = candidates[candidates["product_name"].str.contains(query, case=False, na=False)]
 
     if candidates.empty:
         st.warning("일치하는 상품이 없습니다. 리뷰 20건 이상인 상품만 리포트를 제공합니다.")
@@ -60,22 +58,51 @@ with tab0:
         c4.metric("부정 비율", f"{neg_ratio:.0f}%")
 
         st.markdown("### 속성별 장단점")
-        asp = aspect_sentiment[
-            (aspect_sentiment["platform"] == row["platform"]) & (aspect_sentiment["product_id"] == row["product_id"])
-        ]
-        if asp.empty:
+        own_asp = aspect_table[
+            (aspect_table["platform"] == row["platform"]) & (aspect_table["product_id"] == row["product_id"])
+        ].sort_values("total_mentions", ascending=False)
+        if own_asp.empty:
             st.info("이 상품에서는 속성 관련 언급을 충분히 찾지 못했습니다.")
         else:
-            pivot = asp.pivot_table(index="aspect", columns="sentiment", values="count", fill_value=0)
-            for col in ["positive", "negative", "neutral"]:
-                if col not in pivot.columns:
-                    pivot[col] = 0
-            pivot["총 언급"] = pivot["positive"] + pivot["negative"] + pivot["neutral"]
-            pivot["긍정 비율(%)"] = (pivot["positive"] / pivot["총 언급"] * 100).round(0)
-            pivot = pivot.sort_values("총 언급", ascending=False)
+            for _, r in own_asp.iterrows():
+                st.progress(
+                    int(r["positive_ratio"]),
+                    text=f"**{r['aspect']}** — 긍정 {r['positive_ratio']:.0f}% (언급 {int(r['total_mentions'])}건)",
+                )
 
-            for aspect_name, r in pivot.iterrows():
-                st.progress(int(r["긍정 비율(%)"]), text=f"**{aspect_name}** — 긍정 {int(r['긍정 비율(%)'])}% (언급 {int(r['총 언급'])}건)")
+        st.markdown("### 이거 말고 다른 건? (대안 상품 추천)")
+        weakest, alternatives = rd.find_alternatives(aspect_table, row["platform"], row["product_id"])
+        if weakest is None:
+            st.info("속성 데이터가 충분하지 않아 대안을 추천할 수 없습니다.")
+        elif alternatives.empty:
+            st.success(f"이 상품의 가장 약한 속성은 **{weakest['aspect']}**(긍정 {weakest['positive_ratio']:.0f}%)이지만, "
+                       f"같은 카테고리에서 뚜렷하게 더 나은 대안을 찾지 못했습니다.")
+        else:
+            st.warning(f"이 상품은 **{weakest['aspect']}** 속성이 가장 약합니다 (긍정 {weakest['positive_ratio']:.0f}%, "
+                       f"{int(weakest['total_mentions'])}건 언급). 같은 카테고리에서 이 속성이 더 좋은 상품:")
+            for _, alt in alternatives.iterrows():
+                st.markdown(
+                    f"- **[{alt['platform']}] {alt['product_name']}** — "
+                    f"{weakest['aspect']} 긍정 {alt['positive_ratio']:.0f}% "
+                    f"(언급 {int(alt['total_mentions'])}건, 평점 {alt['avg_rating']:.1f})"
+                )
+
+        st.markdown("### 피부타입별 평가 (무신사 리뷰 기준)")
+        skin_result = rd.skin_segment_view(skin_aspect, skin_summary, row["product_id"])
+        if skin_result is None:
+            st.caption("이 상품은 피부타입 데이터가 없습니다 (무신사에서 수집된 상품만 제공).")
+        else:
+            pivot, seg_counts = skin_result
+            skin_types = sorted(pivot["skin_category"].unique())
+            skin_cols = st.columns(len(skin_types))
+            for col, skin_type in zip(skin_cols, skin_types):
+                with col:
+                    n_review = seg_counts[seg_counts["skin_category"] == skin_type]["review_count"]
+                    n_review = int(n_review.iloc[0]) if len(n_review) else 0
+                    st.markdown(f"**{skin_type} 피부** ({n_review}명)")
+                    sub = pivot[pivot["skin_category"] == skin_type].sort_values("total", ascending=False).head(4)
+                    for _, r in sub.iterrows():
+                        st.caption(f"{r['aspect']}: 긍정 {int(r['positive_ratio'])}%")
 
         st.markdown("### 대표 리뷰")
         product_reviews = rep_reviews[
@@ -96,84 +123,39 @@ with tab0:
 
         st.caption("속성별 긍정 비율은 규칙 기반 속성분석(absa.py)으로 산출 — 리뷰를 문장 단위로 나눠 속성 키워드와 감성 단어를 매칭합니다.")
 
-# ---------------- 리뷰 텍스트 분석 (보조 기능) ----------------
-with tab1:
-    st.subheader("리뷰 텍스트를 입력하면 ML / DL 두 모델이 동시에 예측합니다")
-    sample_texts = [
-        "직접 입력하기",
-        "촉촉하고 흡수도 잘 되고 향도 좋아요 재구매 의사 있습니다",
-        "발림성은 좋은데 향이 너무 강하고 트러블이 났어요 비추천합니다",
-        "그냥 무난해요 딱히 좋지도 나쁘지도 않은 평범한 제품",
-    ]
-    choice = st.selectbox("예시 리뷰 선택", sample_texts)
-    default_text = "" if choice == sample_texts[0] else choice
-    text = st.text_area("리뷰 내용", value=default_text, height=120,
-                         placeholder="예: 피부가 좋아지고 촉촉해서 만족스러워요")
-
-    if st.button("감성 분석 실행", type="primary") and text.strip():
-        models = load_models()
-        result = models.predict(text)
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("### 🤖 ML (TF-IDF + LogisticRegression)")
-            st.metric("예측 감성", result["ml"]["label_ko"])
-            st.bar_chart(pd.Series(result["ml"]["proba"]))
-        with col2:
-            st.markdown("### 🧠 DL (numpy 직접 구현 신경망)")
-            st.metric("예측 감성", result["dl"]["label_ko"])
-            st.bar_chart(pd.Series(result["dl"]["proba"]))
-
-        st.caption(f"형태소 분석 후 토큰: {result['cleaned_text']}")
-
-with tab2:
-    st.subheader("플랫폼별 리뷰 현황")
-    platform_counts = load_agg("agg_platform_counts.csv")
-    c1, c2 = st.columns([1, 2])
-    with c1:
-        st.dataframe(platform_counts, hide_index=True, use_container_width=True)
-    with c2:
-        st.bar_chart(platform_counts.set_index("platform")["count"])
-
-    st.subheader("플랫폼별 별점 분포")
-    rating_dist = load_agg("agg_rating_dist.csv")
-    pivot = rating_dist.pivot(index="rating", columns="platform", values="count").fillna(0)
-    st.bar_chart(pivot)
-
-    st.subheader("월별 리뷰 추이 (2022년 이후)")
-    monthly = load_agg("agg_monthly_trend.csv")
-    monthly_pivot = monthly.pivot(index="year_month", columns="platform", values="count").fillna(0)
-    st.line_chart(monthly_pivot)
-
-    st.subheader("카테고리별 감성 분포")
-    cat_sent = load_agg("agg_category_sentiment.csv")
-    cat_pivot = cat_sent.pivot(index="category", columns="sentiment", values="count").fillna(0)
-    st.bar_chart(cat_pivot)
+# ==================== 속성별 랭킹 ====================
+with tab_rank:
+    st.subheader("카테고리 + 속성을 고르면 그 속성이 가장 좋은 상품 Top 10을 보여드립니다")
+    categories = sorted(product_summary["category"].dropna().unique().tolist())
 
     col1, col2 = st.columns(2)
     with col1:
-        st.subheader("부정 리뷰 다빈도 단어 Top 30 (형태소 분석 기반)")
-        st.dataframe(load_agg("agg_top_negative_words.csv"), hide_index=True, use_container_width=True, height=400)
+        rank_category = st.selectbox("카테고리", categories, index=categories.index("토너") if "토너" in categories else 0)
     with col2:
-        st.subheader("긍정 리뷰 다빈도 단어 Top 30 (형태소 분석 기반)")
-        st.dataframe(load_agg("agg_top_positive_words.csv"), hide_index=True, use_container_width=True, height=400)
+        rank_aspect = st.selectbox("속성", ASPECTS)
 
-    st.subheader("리뷰 샘플 둘러보기")
-    sample = load_agg("sample_reviews.csv")
-    platform_filter = st.multiselect("플랫폼 필터", sample["platform"].unique().tolist(),
-                                      default=sample["platform"].unique().tolist())
-    st.dataframe(sample[sample["platform"].isin(platform_filter)], use_container_width=True, height=300)
+    ranking = rd.aspect_ranking(aspect_table, rank_category, rank_aspect, top_n=10)
+    if ranking.empty:
+        st.info("표본이 충분한 상품이 없습니다 (속성 언급 15건 이상인 상품만 집계).")
+    else:
+        display = ranking[["platform", "product_name", "positive_ratio", "total_mentions", "avg_rating", "review_count"]].copy()
+        display.columns = ["플랫폼", "상품명", "긍정비율(%)", "언급건수", "평균별점", "전체리뷰수"]
+        display.insert(0, "순위", range(1, len(display) + 1))
+        st.dataframe(display, hide_index=True, use_container_width=True)
 
-with tab3:
+# ==================== 프로젝트 소개 ====================
+with tab_about:
     st.subheader("프로젝트 개요")
     st.markdown("""
     **BeautyScope**는 쿠팡·무신사·올리브영 3개 플랫폼에서 수집한 화장품 리뷰
-    538,774건을 분석하는 서비스입니다.
+    538,774건을 분석해, 구매를 고민하는 사람에게 실제로 쓸모 있는 정보를
+    보여주는 서비스입니다.
 
     - **상품 리포트**: 속성기반 감성분석(ABSA)으로 보습/향/트러블/발림성 등
-      8개 속성별 긍정 비율과 대표 리뷰를 보여줘 구매 의사결정을 돕습니다
-    - **리뷰 텍스트 분석**: 형태소 분석(Okt) 기반 TF-IDF로 학습한 ML/DL
-      감성 분류 모델 두 가지를 비교해서 보여줍니다
+      8개 속성별 긍정 비율, 약점을 보완하는 대안 상품, 피부타입별(무신사
+      기준) 평가, 대표 리뷰까지 한 화면에서 제공
+    - **속성별 랭킹**: 카테고리 + 속성을 고르면 그 속성이 가장 좋은 상품
+      Top 10을 바로 확인
     - **데이터**: 쿠팡 86,379건 + 무신사 230,870건 + 올리브영 221,525건
       (중복/노이즈 제거 후 538,774건)
 
