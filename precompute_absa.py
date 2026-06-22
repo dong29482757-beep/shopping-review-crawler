@@ -44,8 +44,9 @@ def main():
     )
     agg.to_csv(f"{OUT_DIR}/aspect_sentiment.csv", index=False, encoding="utf-8-sig")
 
+    df["brand_name"] = df["brand_name"].fillna("")  # 검색에 브랜드명도 쓰려고 보존 (쿠팡은 브랜드 정보 없음)
     product_summary = (
-        df.groupby(["platform", "product_id", "product_name", "category"])
+        df.groupby(["platform", "product_id", "product_name", "category", "brand_name"])
         .agg(review_count=("review_id", "size"), avg_rating=("rating", "mean"))
         .reset_index()
     )

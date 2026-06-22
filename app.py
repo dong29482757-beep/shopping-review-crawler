@@ -29,23 +29,48 @@ tab_report, tab_rank, tab_about = st.tabs(["🛍️ 상품 리포트", "🏆 속
 # ==================== 상품 리포트 ====================
 with tab_report:
     st.subheader("상품을 검색하면 속성별 장단점 · 대안 상품 · 피부타입별 평가를 보여드립니다")
-    query = st.text_input("상품명 검색", placeholder="예: 토너, 선크림, 닥터지, 라로슈포제 ...")
+
+    col_cat, col_query = st.columns([1, 2])
+    with col_cat:
+        categories = ["전체"] + sorted(product_summary["category"].dropna().unique().tolist())
+        picked_category = st.selectbox("카테고리로 좁히기", categories)
+    with col_query:
+        query = st.text_input(
+            "상품명 또는 브랜드로 검색 (여러 단어는 띄어서)",
+            placeholder="예: 토너 / 닥터지 / 라로슈포제 시카 / 무신사 보습크림",
+        )
 
     candidates = product_summary.sort_values("review_count", ascending=False)
+    if picked_category != "전체":
+        candidates = candidates[candidates["category"] == picked_category]
+
     if query.strip():
-        candidates = candidates[candidates["product_name"].str.contains(query, case=False, na=False)]
+        # 여러 단어를 입력하면 전부 포함된 상품만 남긴다 (상품명+브랜드명 통째로 검사)
+        # 예: "닥터지 토너"를 입력하면 두 단어가 다 들어간 상품만 매칭됨
+        search_target = candidates["product_name"].fillna("") + " " + candidates["brand_name"].fillna("")
+        search_target = search_target.str.lower()
+        keywords = query.lower().split()
+        mask = pd.Series(True, index=candidates.index)
+        for kw in keywords:
+            mask &= search_target.str.contains(kw, regex=False)
+        candidates = candidates[mask]
 
     if candidates.empty:
-        st.warning("일치하는 상품이 없습니다. 리뷰 20건 이상인 상품만 리포트를 제공합니다.")
+        st.warning("일치하는 상품이 없습니다. 검색어를 줄이거나 카테고리를 \"전체\"로 바꿔보세요 "
+                   "(리뷰 20건 이상인 상품만 리포트를 제공합니다).")
     else:
+        st.caption(f"검색 결과 {len(candidates)}개 (리뷰 많은 순)")
         top_candidates = candidates.head(50).reset_index(drop=True)
+
+        def _label(i):
+            r = top_candidates.loc[i]
+            brand = f"{r['brand_name']} " if r["brand_name"] else ""
+            return f"[{r['platform']}] {brand}{r['product_name']} (리뷰 {int(r['review_count']):,}건, 평점 {r['avg_rating']:.1f})"
+
         selected_idx = st.selectbox(
-            f"상품 선택 ({len(candidates)}개 중 상위 50개 표시)",
+            f"상품 선택 (상위 {len(top_candidates)}개 표시 — 목록 안에서도 입력해 검색 가능)",
             options=top_candidates.index,
-            format_func=lambda i: (
-                f"[{top_candidates.loc[i, 'platform']}] {top_candidates.loc[i, 'product_name']} "
-                f"(리뷰 {int(top_candidates.loc[i, 'review_count']):,}건, 평점 {top_candidates.loc[i, 'avg_rating']:.1f})"
-            ),
+            format_func=_label,
         )
         row = top_candidates.loc[selected_idx]
 
