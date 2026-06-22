@@ -1,0 +1,10 @@
+﻿platform,sentiment,count
+coupang,negative,8079
+coupang,neutral,2287
+coupang,positive,76013
+musinsa,negative,973
+musinsa,neutral,4095
+musinsa,positive,225802
+oliveyoung,negative,35237
+oliveyoung,neutral,20936
+oliveyoung,positive,165352

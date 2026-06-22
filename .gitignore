@@ -3,6 +3,7 @@ coupang_env/
 
 # 수집 데이터 (용량 큼)
 *.csv
+!models/*.csv
 
 # 캐시
 __pycache__/

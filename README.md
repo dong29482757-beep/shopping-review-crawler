@@ -277,3 +277,66 @@ python quality_check.py
 | 대표성 | ⚠️ 주의 | 5점 리뷰 편향 (79%), 쿠팡 리뷰 특성상 불가피 |
 | 노이즈 | ✅ 처리 완료 | 체험단 19,784건 + 도배 1,029건 제거 |
 | 활용 가능성 | ✅ 즉시 사용 가능 | BeautyScope · Streamlit 대시보드 연동 예정 |
+
+---
+
+## BeautyScope 서비스 (쿠팡+무신사+올리브영 통합)
+
+쿠팡 단독 데이터에서 더 나아가 동료가 크롤링한 무신사·올리브영 데이터까지
+통합해 **538,774건** 규모로 키운 뒤, 감성 분류 모델(ML+DL)을 학습하고
+Streamlit 서비스로 구현했습니다. 개발 과정에서 겪은 문제와 해결 과정은
+[DEVLOG.md](DEVLOG.md)에, 5분 발표용 슬라이드는 [BeautyScope_발표.pptx](BeautyScope_발표.pptx)에
+정리되어 있습니다.
+
+| 플랫폼 | 건수 |
+|---|---|
+| 쿠팡 | 86,379 |
+| 무신사 | 230,870 |
+| 올리브영 | 221,525 |
+| **통합 전체** | **538,774** |
+
+### 모델 성능
+
+| | accuracy | macro F1 | 비고 |
+|---|---|---|---|
+| ML (TF-IDF + LogisticRegression) | 0.738 | 0.677 | `ml/train_ml.py` |
+| DL (numpy로 직접 구현한 3층 신경망) | 0.762 | 0.663 | `dl/train_dl.py`, PyTorch가 Python 3.14에서 설치 불가해 numpy로 직접 구현 |
+
+### 실행 방법
+
+```bash
+# 1. 데이터 통합
+python merge_datasets.py
+
+# 2. 학습 데이터 준비 (클래스 밸런싱)
+python ml/prepare_data.py
+
+# 3. 모델 학습
+python ml/train_ml.py
+python dl/train_dl.py
+
+# 4. 대시보드용 집계 생성
+python precompute_dashboard.py
+
+# 5. 서비스 실행
+streamlit run app.py
+```
+
+### 추가 파일 구조
+
+```
+crolling/
+├── merge_datasets.py       # 3개 플랫폼 데이터 통합 (스키마/라벨 통일)
+├── ml/
+│   ├── prepare_data.py     # 클래스 밸런싱, train/test 분리
+│   └── train_ml.py         # TF-IDF + LogisticRegression
+├── dl/
+│   ├── neural_net.py       # numpy 기반 피드포워드 신경망 구현
+│   └── train_dl.py         # DL 모델 학습
+├── precompute_dashboard.py # 대시보드용 사전 집계
+├── model_utils.py          # 서비스용 추론 유틸
+├── app.py                  # Streamlit 서비스
+├── models/                 # 학습된 모델 + 집계 데이터
+├── DEVLOG.md                # 개발 기록 (문제/해결 과정 상세)
+└── BeautyScope_발표.pptx    # 5분 발표용 슬라이드
+```
