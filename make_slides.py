@@ -329,5 +329,28 @@ chart3.plots[0].series[0].format.fill.fore_color.rgb = GREY
 chart3.plots[0].series[1].format.fill.solid()
 chart3.plots[0].series[1].format.fill.fore_color.rgb = NAVY
 
+# ====================================================================
+# Slide 8: 모델을 실제로 어떻게 썼나 — 리뷰 신뢰도 검증
+# ====================================================================
+s = add_slide(WHITE)
+add_text(s, "모델을 실제로 어떻게 썼나 — 리뷰 신뢰도 검증", 0.7, 0.5, 11.5, 0.8, size=26, color=NAVY, bold=True, font="Georgia")
+add_text(s, "모델을 성능 비교로 끝내지 않고, 보정된 모델을 그대로 서비스 핵심 지표에 연결했다",
+         0.7, 1.3, 11.5, 0.5, size=13.5, color=GREY)
+
+cols2 = [
+    ("배경", "별점 기반 라벨링의 한계로, 별점 5점 리뷰의 21%가\n실제로는 부정적 내용이었다 — 평점만 믿으면 속성\n분석 결과도 같이 흔들린다"),
+    ("방법", "확률보정까지 마친 ML 모델을 전체 리뷰에 한 번\n배치로 돌려서, 모델이 텍스트로 판단한 감성과 별점\n기반 라벨이 상품별로 얼마나 일치하는지 계산"),
+    ("결과", "상품 리포트에 \"리뷰 신뢰도\" 지표로 노출 — 신뢰도가\n낮은 상품은 \"속성 분석을 더 신중하게 보라\"는\n안내까지 자동으로 붙는다"),
+]
+cx2 = 0.7
+cw2 = 3.85
+for i, (title, desc) in enumerate(cols2):
+    add_card(s, cx2 + i*(cw2+0.2), 1.9, cw2, 2.9, accent=ACCENT if i == 2 else NAVY)
+    add_text(s, title, cx2 + i*(cw2+0.2) + 0.25, 2.15, cw2 - 0.5, 0.5, size=15, bold=True, color=NAVY)
+    add_text(s, desc, cx2 + i*(cw2+0.2) + 0.25, 2.7, cw2 - 0.5, 2.0, size=12, color=DARK, line_spacing=1.35)
+
+add_text(s, "→ 모델은 비교 실험으로 끝나지 않고, 서비스가 보여주는 정보의 신뢰도를 검증하는 백엔드 역할을 한다",
+         0.7, 5.1, 11.9, 0.5, size=14, bold=True, color=NAVY)
+
 prs.save(r"D:\crolling\BeautyScope_발표.pptx")
 print("저장 완료")
