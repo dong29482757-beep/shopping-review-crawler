@@ -17,7 +17,18 @@ def load_all(model_dir=MODEL_DIR):
     rep_reviews = pd.read_csv(f"{model_dir}/representative_reviews.csv", encoding="utf-8-sig")
     skin_aspect = pd.read_csv(f"{model_dir}/skin_aspect_sentiment.csv", encoding="utf-8-sig")
     skin_summary = pd.read_csv(f"{model_dir}/skin_segment_summary.csv", encoding="utf-8-sig")
-    return aspect_sentiment, product_summary, rep_reviews, skin_aspect, skin_summary
+    reliability = pd.read_csv(f"{model_dir}/review_reliability.csv", encoding="utf-8-sig")
+    return aspect_sentiment, product_summary, rep_reviews, skin_aspect, skin_summary, reliability
+
+
+def get_reliability(reliability, platform, product_id):
+    """학습된 모델이 텍스트만 보고 판단한 감성과 별점 기반 라벨이 얼마나
+    일치하는지(=리뷰 신뢰도) 상품 단위로 조회. 모델을 평가용으로만 두지 않고
+    서비스 품질 검증에 실제로 활용하는 지표."""
+    row = reliability[(reliability["platform"] == platform) & (reliability["product_id"] == product_id)]
+    if row.empty:
+        return None
+    return row.iloc[0]
 
 
 def build_aspect_table(aspect_sentiment, product_summary):

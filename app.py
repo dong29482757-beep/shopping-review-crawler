@@ -18,8 +18,9 @@ def get_aspect_table(aspect_sentiment, product_summary):
     return rd.build_aspect_table(aspect_sentiment, product_summary)
 
 
-aspect_sentiment, product_summary, rep_reviews, skin_aspect, skin_summary = load_data()
+aspect_sentiment, product_summary, rep_reviews, skin_aspect, skin_summary, reliability = load_data()
 aspect_table = get_aspect_table(aspect_sentiment, product_summary)
+AVG_RELIABILITY = reliability["reliability_pct"].mean()
 
 st.title("💄 BeautyScope — 화장품 상품 리포트")
 st.caption("쿠팡 · 무신사 · 올리브영 538,774건의 리뷰 기반 — 속성별 장단점, 랭킹, 대안 상품까지 한 번에")
@@ -79,13 +80,27 @@ with tab_report:
         )
         row = top_candidates.loc[selected_idx]
 
-        c1, c2, c3, c4 = st.columns(4)
+        c1, c2, c3, c4, c5 = st.columns(5)
         c1.metric("리뷰 수", f"{int(row['review_count']):,}건")
         c2.metric("평균 별점", f"{row['avg_rating']:.2f} / 5")
         pos_ratio = row.get("n_positive", 0) / row["review_count"] * 100
         c3.metric("긍정 비율", f"{pos_ratio:.0f}%")
         neg_ratio = row.get("n_negative", 0) / row["review_count"] * 100
         c4.metric("부정 비율", f"{neg_ratio:.0f}%")
+
+        rel = rd.get_reliability(reliability, row["platform"], row["product_id"])
+        if rel is not None:
+            c5.metric("리뷰 신뢰도", f"{rel['reliability_pct']:.0f}%",
+                      help="학습된 감성분석 모델이 리뷰 텍스트만 보고 판단한 감성이 별점 기반 라벨과 "
+                           "얼마나 일치하는지. 낮을수록 별점과 리뷰 내용이 안 맞는 경우가 많다는 뜻")
+            if rel["reliability_pct"] < AVG_RELIABILITY - 10:
+                st.warning(
+                    f"⚠️ 이 상품은 별점과 리뷰 내용이 일치하지 않는 리뷰가 평균보다 많습니다 "
+                    f"({rel['mismatch_count']}건 / {rel['review_count']}건). 아래 속성별 분석을 "
+                    f"참고할 때 평점만큼 확정적으로 받아들이지 않는 걸 추천합니다."
+                )
+        else:
+            c5.metric("리뷰 신뢰도", "—")
 
         st.markdown("### 속성별 장단점")
         own_asp = aspect_table[
@@ -186,6 +201,10 @@ with tab_about:
       기준) 평가, 대표 리뷰까지 한 화면에서 제공
     - **속성별 랭킹**: 카테고리 + 속성을 고르면 그 속성이 가장 좋은 상품
       Top 10을 바로 확인
+    - **리뷰 신뢰도**: 학습된 감성분석 모델(TF-IDF+로지스틱회귀, 확률보정
+      적용)을 전체 리뷰에 돌려서, 별점 기반 라벨과 모델이 텍스트만 보고
+      판단한 감성이 얼마나 일치하는지 상품별로 검증. 별점과 리뷰 내용이
+      안 맞는 리뷰가 많은 상품은 속성 분석 결과를 더 신중하게 보도록 안내
     - **데이터**: 쿠팡 86,379건 + 무신사 230,870건 + 올리브영 221,525건
       (중복/노이즈 제거 후 538,774건)
 

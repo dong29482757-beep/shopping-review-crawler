@@ -349,8 +349,16 @@ for i, (title, desc) in enumerate(cols2):
     add_text(s, title, cx2 + i*(cw2+0.2) + 0.25, 2.15, cw2 - 0.5, 0.5, size=15, bold=True, color=NAVY)
     add_text(s, desc, cx2 + i*(cw2+0.2) + 0.25, 2.7, cw2 - 0.5, 2.0, size=12, color=DARK, line_spacing=1.35)
 
+stat_x = 0.7
+stat_w = 3.95
+stats8 = [("1,883개", "대상 상품"), ("90.2%", "평균 리뷰 신뢰도"), ("46.3~100%", "상품별 분포")]
+for i, (num, label) in enumerate(stats8):
+    add_stat(s, num, label, stat_x + i*stat_w, 4.95, stat_w, 0.95)
+
 add_text(s, "→ 모델은 비교 실험으로 끝나지 않고, 서비스가 보여주는 정보의 신뢰도를 검증하는 백엔드 역할을 한다",
-         0.7, 5.1, 11.9, 0.5, size=14, bold=True, color=NAVY)
+         0.7, 6.0, 11.9, 0.5, size=14, bold=True, color=NAVY)
+add_text(s, "※ 라벨 노이즈를 없앤 것은 아니다 — 사용자에게 투명하게 드러내서 대응한 것",
+         0.7, 6.5, 11.9, 0.4, size=11, color=GREY, italic=True)
 
 prs.save(r"D:\crolling\BeautyScope_발표.pptx")
 print("저장 완료")
