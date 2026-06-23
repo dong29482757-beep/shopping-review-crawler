@@ -30,7 +30,10 @@ tab_report, tab_rank, tab_about = st.tabs(["🛍️ 상품 리포트", "🏆 속
 with tab_report:
     st.subheader("상품을 검색하면 속성별 장단점 · 대안 상품 · 피부타입별 평가를 보여드립니다")
 
-    col_cat, col_query = st.columns([1, 2])
+    col_platform, col_cat, col_query = st.columns([1, 1, 2])
+    with col_platform:
+        platforms = ["전체"] + sorted(product_summary["platform"].dropna().unique().tolist())
+        picked_platform = st.selectbox("플랫폼", platforms)
     with col_cat:
         categories = ["전체"] + sorted(product_summary["category"].dropna().unique().tolist())
         picked_category = st.selectbox("카테고리로 좁히기", categories)
@@ -41,6 +44,8 @@ with tab_report:
         )
 
     candidates = product_summary.sort_values("review_count", ascending=False)
+    if picked_platform != "전체":
+        candidates = candidates[candidates["platform"] == picked_platform]
     if picked_category != "전체":
         candidates = candidates[candidates["category"] == picked_category]
 
