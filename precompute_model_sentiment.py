@@ -1,11 +1,14 @@
 """
 학습된 ML 모델(TF-IDF + 로지스틱회귀, 확률보정 적용)을 리뷰 전체에 돌려서
 "별점 기반 라벨"과 "모델이 텍스트만 보고 판단한 라벨"이 얼마나 일치하는지
-상품별로 집계한다.
+검증한다.
 
 별점 기반 라벨링의 한계(별점 5점인데 텍스트는 부정적인 경우가 21%)를
-직접 검증/정량화하는 단계 — 상품별 "리뷰 신뢰도" 지표로 상품 리포트에
-노출해서, 모델을 평가용으로만 두지 않고 서비스 품질 검증에 실제로 쓴다.
+직접 검증/정량화하는 단계다. 단순히 상품별 "리뷰 신뢰도" 배지를 보여주는
+것에서 멈추지 않고, 리뷰 단위 일치여부(review_match_flags.csv)를 저장해서
+precompute_absa.py가 이 결과로 신뢰도 낮은 리뷰를 실제로 걸러내고 장단점/
+추천 숫자 자체를 계산하는 데 쓴다 — 모델을 평가용 실험에 머물게 하지 않고
+서비스가 보여주는 핵심 수치에 직접 반영한다.
 
 Okt 형태소분석이 병목이라(초당 약 200건) 534,803건 전체를 처리하는 데
 시간이 걸리는 일회성 배치 작업이다. precompute_absa.py와 같은 모집단
@@ -72,7 +75,12 @@ def main():
     reliability["mismatch_count"] = reliability["review_count"] - reliability["match_count"]
     reliability.to_csv(f"{OUT_DIR}/review_reliability.csv", index=False, encoding="utf-8-sig")
 
-    print("저장 완료: review_reliability.csv")
+    # 리뷰 단위 일치여부를 그대로 저장 — precompute_absa.py가 이걸로
+    # "모델이 별점-내용 불일치라고 본 리뷰"를 장단점 집계에서 제외한다.
+    match_flags = df[["platform", "product_id", "review_id", "model_sentiment", "model_confidence", "match"]]
+    match_flags.to_csv(f"{OUT_DIR}/review_match_flags.csv", index=False, encoding="utf-8-sig")
+
+    print("저장 완료: review_reliability.csv, review_match_flags.csv")
     print(f"상품 수: {len(reliability)}")
     print(f"전체 평균 신뢰도: {reliability['reliability_pct'].mean():.1f}%")
     print(f"리뷰 단위 전체 일치율: {df['match'].mean()*100:.1f}%")

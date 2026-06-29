@@ -25,6 +25,16 @@ AVG_RELIABILITY = reliability["reliability_pct"].mean()
 st.title("💄 BeautyScope — 화장품 상품 리포트")
 st.caption("쿠팡 · 무신사 · 올리브영 538,774건의 리뷰 기반 — 속성별 장단점, 랭킹, 대안 상품까지 한 번에")
 
+try:
+    with open("models/absa_filter_stats.txt", encoding="utf-8") as f:
+        _excluded = int(f.read().strip())
+    st.caption(
+        f"ℹ️ 아래 속성별 장단점·랭킹은 학습된 감성분석 모델이 \"별점과 리뷰 내용이 안 맞는다\"고 "
+        f"판단한 리뷰 {_excluded:,}건(전체의 {_excluded/534803*100:.1f}%)을 제외하고 계산되었습니다."
+    )
+except FileNotFoundError:
+    pass
+
 tab_report, tab_rank, tab_about = st.tabs(["🛍️ 상품 리포트", "🏆 속성별 랭킹", "ℹ️ 프로젝트 소개"])
 
 # ==================== 상품 리포트 ====================
