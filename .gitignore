@@ -1,14 +1,15 @@
 # 가상환경
 coupang_env/
 torch_env/
+venv/
 
-# 수집 데이터 (용량 큼) - 최종 정제 데이터(merged_reviews_all.csv)만 Git LFS로 포함
+# 수집 데이터 (용량 큼)
 *.csv
-!models/*.csv
-!merged_reviews_all.csv
+!2_executable/models/*.csv
+!1_source/merged_reviews_all.csv
 
-# ml/ 학습 중간 데이터 (prepare_data.py가 생성하는 파일, 재현 가능)
-ml/*.csv
+# 학습 중간 데이터 (재현 가능한 파일)
+1_source/train/ml/*.csv
 
 # 캐시
 __pycache__/
@@ -19,15 +20,3 @@ __pycache__/
 *.log
 ~$*
 *.zip
-
-# Spring(BeautyScope 웹서비스) 쪽 전용 작업 파일 - 이 저장소(Streamlit) 범위 아님
-crawl_images.py
-crawl_coupang_via_naver.py
-split_model.py
-cleanup_unconfirmed.sql
-update_image_paths.sql
-product_images/
-coupang_alive_ids.txt
-retry_coupang_ids.txt
-retry_coupang_ids_raw.txt
-retry_oliveyoung_ids.txt
