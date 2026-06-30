@@ -15,6 +15,7 @@ __pycache__/
 # 임시 파일
 *.log
 ~$*
+*.zip
 
 # Spring(BeautyScope 웹서비스) 쪽 전용 작업 파일 - 이 저장소(Streamlit) 범위 아님
 crawl_images.py
