@@ -7,6 +7,9 @@ torch_env/
 !models/*.csv
 !merged_reviews_all.csv
 
+# ml/ 학습 중간 데이터 (prepare_data.py가 생성하는 파일, 재현 가능)
+ml/*.csv
+
 # 캐시
 __pycache__/
 *.pyc
