@@ -14,16 +14,20 @@ Okt 형태소분석이 병목이라(초당 약 200건) 534,803건 전체를 처�
 시간이 걸리는 일회성 배치 작업이다. precompute_absa.py와 같은 모집단
 (리뷰 20건 이상 상품)만 대상으로 한다.
 """
+import os
+import sys
 import time
 import joblib
 import numpy as np
 import pandas as pd
 
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
 from preprocessing_ko import clean_for_vectorizer
 from model_utils import LABELS, PRIOR_CORRECTION
 
-SRC = r"D:\crolling\merged_reviews_all.csv"
-OUT_DIR = r"D:\crolling\models"
+SRC = os.path.join(ROOT, "merged_reviews_all.csv")
+OUT_DIR = os.path.join(ROOT, "models")
 MIN_REVIEWS = 20
 
 

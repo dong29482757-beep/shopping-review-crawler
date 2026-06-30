@@ -1,13 +1,16 @@
+import os
 import sys
 import time
 import pandas as pd
 
-sys.path.append(r"D:\crolling")
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, ROOT)
 from preprocessing_ko import clean_for_vectorizer
 
+_ML = os.path.join(ROOT, "train", "ml")
 FILES = [
-    (r"D:\crolling\ml\train.csv", r"D:\crolling\ml\train_tok.csv"),
-    (r"D:\crolling\ml\test.csv", r"D:\crolling\ml\test_tok.csv"),
+    (os.path.join(_ML, "train.csv"), os.path.join(_ML, "train_tok.csv")),
+    (os.path.join(_ML, "test.csv"), os.path.join(_ML, "test_tok.csv")),
 ]
 
 

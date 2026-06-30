@@ -13,9 +13,11 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, accuracy_score, f1_score
 
-TRAIN = r"D:\crolling\ml\train_tok.csv"
-TEST = r"D:\crolling\ml\test_tok.csv"
-OUT_DIR = r"D:\crolling\models"
+import os
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+TRAIN = os.path.join(ROOT, "train", "ml", "train_tok.csv")
+TEST = os.path.join(ROOT, "train", "ml", "test_tok.csv")
+OUT_DIR = os.path.join(ROOT, "models")
 
 
 def main():

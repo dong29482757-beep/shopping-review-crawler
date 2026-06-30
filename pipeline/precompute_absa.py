@@ -9,15 +9,18 @@
 안 돌렸으면) 필터링 없이 예전처럼 전체 리뷰로 계산한다.
 """
 import os
+import sys
 import time
 import collections
 import pandas as pd
 
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
 from absa import extract_aspect_sentiments
 
-SRC = r"D:\crolling\merged_reviews_all.csv"
-OUT_DIR = r"D:\crolling\models"
-MATCH_FLAGS_PATH = f"{OUT_DIR}/review_match_flags.csv"
+SRC = os.path.join(ROOT, "merged_reviews_all.csv")
+OUT_DIR = os.path.join(ROOT, "models")
+MATCH_FLAGS_PATH = os.path.join(OUT_DIR, "review_match_flags.csv")
 
 MIN_REVIEWS = 20  # 이 미만인 상품은 리포트 신뢰도가 낮아서 제외
 

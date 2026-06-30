@@ -11,13 +11,17 @@ skin_type(피부타입) 정보를 버렸었다. 하지만 이 정보가 있으�
 올리브영은 skin_type이 대부분 null이라 (skin_concern만 있음) 이 분석에서는
 무신사만 사용한다.
 """
+import os
+import sys
 import time
 import pandas as pd
 
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
 from absa import extract_aspect_sentiments
 
-SRC = r"C:\Users\user\Desktop\데이터\musinsa_beauty_TOTAL.csv"
-OUT_DIR = r"D:\crolling\models"
+SRC = r"C:\Users\user\Desktop\데이터\musinsa_beauty_TOTAL.csv"  # 무신사 원본 (로컬 경로)
+OUT_DIR = os.path.join(ROOT, "models")
 
 VALID_SKIN_TYPES = {"복합성", "지성", "건성", "민감성"}
 MIN_REVIEWS_PER_SEGMENT = 10

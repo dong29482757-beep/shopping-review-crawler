@@ -5,15 +5,17 @@
      정확도가 86%가 나옴 (== 쓸모없는 모델). 그래서 클래스별로 다운샘플링해서
      학습셋 비율을 맞춘다 (negative/neutral 전량 + positive는 같은 규모로 샘플).
 """
+import os
 import re
 import pandas as pd
 import numpy as np
 
 np.random.seed(42)
 
-SRC = r"D:\crolling\merged_reviews_all.csv"
-OUT_TRAIN = r"D:\crolling\ml\train.csv"
-OUT_TEST = r"D:\crolling\ml\test.csv"
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+SRC = os.path.join(ROOT, "merged_reviews_all.csv")
+OUT_TRAIN = os.path.join(ROOT, "train", "ml", "train.csv")
+OUT_TEST = os.path.join(ROOT, "train", "ml", "test.csv")
 
 
 def clean_text(t):

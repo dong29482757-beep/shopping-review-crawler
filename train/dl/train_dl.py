@@ -5,11 +5,13 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import classification_report, accuracy_score, f1_score
 
-sys.path.append(r"D:\crolling")
-from dl.neural_net import FeedForwardNN
+import os
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from neural_net import FeedForwardNN
 
-TRAIN = r"D:\crolling\ml\train_tok.csv"
-TEST = r"D:\crolling\ml\test_tok.csv"
+TRAIN = os.path.join(ROOT, "train", "ml", "train_tok.csv")
+TEST = os.path.join(ROOT, "train", "ml", "test_tok.csv")
 VEC_PATH = r"D:\crolling\models\tfidf_vectorizer.joblib"
 OUT_DIR = r"D:\crolling\models"
 

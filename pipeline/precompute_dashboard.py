@@ -2,13 +2,17 @@
 대시보드에서 538,774건 원본 CSV를 매번 읽으면 Streamlit이 느려져서
 미리 집계해둔 작은 파일들을 만들어둔다 (플랫폼별/월별/키워드별 통계).
 """
+import os
+import sys
 import collections
 import pandas as pd
 
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
 from preprocessing_ko import tokenize
 
-SRC = r"D:\crolling\merged_reviews_all.csv"
-OUT_DIR = r"D:\crolling\models"
+SRC = os.path.join(ROOT, "merged_reviews_all.csv")
+OUT_DIR = os.path.join(ROOT, "models")
 
 
 def main():
